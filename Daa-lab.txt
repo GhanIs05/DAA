@@ -1,0 +1,1247 @@
+Page 1: Aim & Setup
+Aim:
+Host a static website for a café using Amazon S3, implementing security, storage optimization, and disaster recovery.
+
+Task 1: Extracting Files
+Download & extract the website files.
+Ensure the folder contains:
+index.html (main page)
+images/ (image files)
+Task 2: Creating an S3 Bucket
+Open Amazon S3 console → Create bucket.
+Name: cafe-website-123 (unique)
+Region: US East (N. Virginia)
+Disable "Block all public access".
+Enable Static Website Hosting → Index document: index.html.
+Page 2: Uploading & Public Access
+Task 3: Uploading Files
+Open the S3 bucket.
+Upload index.html and images/.
+Get the Bucket Website Endpoint to test accessibility.
+Task 4: Setting Public Access
+Go to Bucket Policy → Add this policy:
+
+json
+Copy
+Edit
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::cafe-website-123/*"
+    }
+  ]
+}
+Save & test if the website is publicly accessible.
+
+Page 3: Versioning & Updates
+Task 5: Enabling Versioning
+Open the S3 bucket → Properties → Enable Versioning.
+Once enabled, it cannot be disabled (only suspended).
+Modifying the Website
+Open index.html, change colors:
+aquamarine → gainsboro
+orange → cornsilk
+Save & upload the updated file.
+In S3, enable Show Versions to track file history.
+Page 4: Storage Optimization
+Task 6: Setting Lifecycle Rules
+Open S3 bucket → Management → Create rule:
+Move old versions to Standard-IA after 30 days.
+Delete old versions after 365 days.
+Task 7: Cross-Region Replication
+Create a new S3 bucket in another region (us-west-1).
+Enable versioning on both buckets.
+In the source bucket, enable Cross-Region Replication (CRR):
+Select Replicate the entire bucket.
+Use IAM role CafeRole.
+Page 5: Disaster Recovery & Testing
+Verifying Replication
+Modify index.html and upload it to the source bucket.
+Check if changes appear in the destination bucket.
+Delete a version in the source bucket and check if it persists in the replicated bucket.
+Website Review
+Check if images load correctly.
+Test version history in S3.
+Ensure public accessibility is intact.
+Page 6: Final Output & Conclusion
+Output:
+Website hosted on Amazon S3.
+Public access enabled with security settings.
+Versioning & lifecycle policies implemented.
+Cross-region replication enabled for backup.
+Conclusion:
+This lab covered S3 static hosting, security policies, storage management, and disaster recovery. These are key concepts for scalable & cost-effective cloud hosting.
+
+----
+
+Page 1: Aim & Setup
+Aim:
+Deploy a dynamic website for a café on Amazon EC2, enabling online ordering functionality and establishing development and production environments.
+Process:
+
+Connect to AWS Cloud9 IDE on a pre-configured EC2 instance
+Analyze instance details:
+
+Check subnet type (public/private)
+Verify public IP address assignment
+Review open TCP ports
+Confirm IAM role association
+
+
+Configure web server environment:
+
+Start Apache web server and MariaDB database
+Configure services to start automatically on reboot
+Link web directories to Cloud9 workspace
+Set proper file permissions
+
+
+
+Page 2: Web Server Configuration
+Process:
+
+Create test webpage to verify web server functionality
+Configure web server accessibility:
+
+Ensure security groups allow HTTP traffic
+Test public access to the web server
+
+
+Download application files:
+Copywget https://aws-tc-largeobjects.s3.us-west-2.amazonaws.com/CUR-TF-200-ACACAD-3-113230/03-lab-mod5-challenge-EC2/s3/setup.zip
+wget https://aws-tc-largeobjects.s3.us-west-2.amazonaws.com/CUR-TF-200-ACACAD-3-113230/03-lab-mod5-challenge-EC2/s3/db.zip
+wget https://aws-tc-largeobjects.s3.us-west-2.amazonaws.com/CUR-TF-200-ACACAD-3-113230/03-lab-mod5-challenge-EC2/s3/cafe.zip
+
+Extract application files to web server directory
+
+Page 3: Application Installation
+Process:
+
+Review application code structure:
+
+Analyze PHP files and AWS SDK integration
+Understand Secrets Manager usage
+
+
+Configure application parameters:
+
+Set up secrets in AWS Secrets Manager
+Create required database configuration
+
+
+Initialize database:
+
+Set root password
+Create application database and tables
+Verify table structure and initial data
+
+
+Update PHP configuration:
+
+Configure time zone settings
+Restart web server to apply changes
+
+
+
+Page 4: Troubleshooting & Testing
+Process:
+
+Resolve website functionality issues:
+
+Verify web server accessibility
+Confirm database connectivity
+Check PHP dependencies and configurations
+Troubleshoot application errors
+
+
+Test online ordering functionality:
+
+Navigate to café menu page
+Submit test orders
+Verify order processing
+Review order history functionality
+
+
+
+Page 5: Environment Replication
+Process:
+
+Prepare for AMI creation:
+
+Set static hostname
+Generate SSH key pair
+Configure SSH authorized keys
+
+
+Create AMI from EC2 instance:
+
+Name the image "CafeServer"
+Wait for AMI to become available
+
+
+Deploy to second region:
+
+Copy AMI to Oregon region (us-west-2)
+Launch new EC2 instance from AMI
+Configure security groups for HTTP and SSH access
+Assign appropriate IAM role
+
+
+
+Page 6: Final Setup & Verification
+Process:
+
+Configure Secrets Manager in second region:
+
+Update region settings in parameters script
+Update public DNS configuration
+Run updated script to create secrets
+
+
+Verify production environment:
+
+Test web server accessibility
+Confirm café website functionality
+Validate online ordering system
+Test order placement in production
+
+
+
+Output:
+
+Development environment in US East region (us-east-1)
+Production environment in US West region (us-west-2)
+Fully functional online ordering system for café customers
+Separate environments for safely testing new features
+Improved customer experience with online ordering capability
+Robust disaster recovery through multi-region deployment
+✅
+----
+Database Migration Challenge Lab
+Page 1: Aim & Setup
+Aim:
+Migrate the café's database from a local MariaDB on EC2 to Amazon RDS, improving maintenance, reliability, and backup capabilities while preserving valuable order history data.
+Process:
+
+Create an RDS instance with specific configurations:
+
+Engine: MariaDB
+Template: Dev/Test
+Instance class: db.t3.micro
+Storage: 20 GiB General Purpose SSD
+
+
+
+The café has outgrown its current database setup, where both web server and database are hosted on a single EC2 instance. This architecture creates maintenance challenges and increases the risk of data loss.
+
+Configure RDS connectivity:
+
+Use Lab VPC and lab-db-subnet-group
+Set private access (no public IP)
+Apply appropriate security group (dbSG)
+Use default port 3306
+
+
+
+Page 2: Analyzing Current Application
+Process:
+
+Examine existing café application:
+
+Connect to CafeServer EC2 instance
+Test website functionality at http://<public-ip>/cafe
+Place test orders to verify database connectivity
+Review order history data that needs migration
+
+
+Connect to EC2 instance using AWS Systems Manager:
+
+Establish Session Manager connection
+Switch to appropriate user account (ec2-user)
+Navigate to home directory
+
+
+
+Amazon Systems Manager's Session Manager provides secure shell access without requiring you to open inbound ports or manage SSH keys, simplifying the connection process.
+Page 3: Database Export
+Process:
+
+Examine current database setup:
+
+Verify MariaDB service status
+Check MySQL version information
+Review AWS Secrets Manager for database credentials
+
+
+Connect to local MariaDB database:
+
+Use root credentials from Secrets Manager
+Explore database schema and contents
+Review order and order_item tables
+
+
+Export database using mysqldump:
+
+Create SQL dump file containing all data
+Verify export file creation
+Review dump file contents
+
+
+
+The mysqldump utility provides a reliable method for exporting complete database structures and data, capturing table definitions, relationships, and all records in a format suitable for import into a new database.
+Page 4: RDS Connection Setup
+Process:
+
+Answer questions about RDS configuration:
+
+Identify instance location
+Verify network configuration (public/private)
+Identify subnet details
+Review security group rules
+
+
+Establish connectivity to RDS instance:
+
+Locate RDS endpoint in console
+Test connection from EC2 to RDS instance
+Verify security group allows traffic on port 3306
+Confirm successful connection
+
+
+
+The ability to connect from the EC2 instance to RDS depends on proper network configuration, with security groups acting as virtual firewalls that must permit database traffic between these resources.
+Page 5: Data Migration
+Process:
+
+Import data to RDS database:
+
+Use MySQL client with RDS endpoint
+Import SQL dump file to RDS instance
+Verify import completion
+
+
+Verify data migration success:
+
+Connect to RDS database
+Check for presence of cafe_db
+Verify tables were created
+Confirm all order data was migrated
+
+
+
+Proper database migration requires not just copying the data but ensuring schema integrity and verifying that all relationships between tables are preserved during the transfer process.
+Page 6: Application Configuration
+Process:
+
+Update application database connection:
+
+Modify Secrets Manager parameters
+Update database endpoint value
+Keep username and password synchronized
+Retain database name for application compatibility
+
+
+Verify application functionality with new database:
+
+Stop local MariaDB service on EC2
+Test café website order placement
+Confirm order history displays correctly
+Verify all previously migrated orders are visible
+
+
+
+Output:
+
+Fully functional café application using Amazon RDS for data storage
+Complete order history preserved and accessible
+Improved database administration with automated backups, patching, and maintenance
+Reduced operational burden on café staff
+Enhanced scalability for future business growth
+EC2 resources optimization potential for cost savings
+Increased data durability through RDS managed infrastructure
+✅
+---
+I apologize for missing the page numbers as subheadings. Here's the revised organization with page numbers:
+Aim
+Create a secure VPC networking environment that allows café staff to remotely administer web application servers by implementing a two-tier architecture with public and private subnets, a bastion host for secure access, and multiple security layers including security groups and network ACLs.
+Process
+Page 1
+
+Create a public subnet in the Lab VPC
+
+Create a subnet named "Public Subnet" with CIDR block 10.0.0.0/24 in Availability Zone a
+Create and attach an internet gateway to the Lab VPC
+Configure route table to direct internet traffic (0.0.0.0/0) through the internet gateway
+
+
+Create a bastion host
+
+Launch an EC2 instance in the public subnet
+Use Amazon Linux 2023 AMI and t2.micro instance type
+Configure "Bastion Host SG" security group allowing SSH access only from your IP
+
+
+Test connection to the bastion host
+
+Download the SSH key (labuser.pem or labuser.ppk)
+Connect to the bastion host using SSH
+
+
+
+Page 2
+
+Create a private subnet
+
+Create a subnet named "Private Subnet" with CIDR block 10.0.1.0/24 in the same Availability Zone as the public subnet
+
+
+Create a NAT gateway
+
+Create "Lab NAT Gateway" in the public subnet with a new Elastic IP
+Create a new route table named "Private Route Table"
+Configure the route table to direct internet traffic (0.0.0.0/0) through the NAT gateway
+Associate the route table with the private subnet
+
+
+Create an EC2 instance in the private subnet
+
+Create a new key pair named "vockey2"
+Launch "Private Instance" using Amazon Linux 2023 AMI and t2.micro
+Configure "Private Instance SG" security group allowing SSH only from the bastion host
+
+
+
+Page 3
+
+Configure SSH client for SSH passthrough
+
+For Windows users:
+
+Set up Pageant with both vockey and vockey2 keys
+Configure PuTTY to allow agent forwarding
+
+
+For macOS/Linux users:
+
+Add keys to the keychain using ssh-add
+Use SSH with -A option for agent forwarding
+
+
+
+
+Test SSH connection from bastion host to private instance
+
+Connect to the bastion host using SSH
+From the bastion host, connect to the private instance via SSH
+Test internet connectivity from the private instance with ping
+
+
+
+Page 4
+
+Create and configure network ACLs
+
+Inspect the default network ACL of the Lab VPC
+Create custom "Lab Network ACL" for the Lab VPC
+Configure the custom network ACL to allow all traffic to/from the private subnet
+
+
+Test the custom network ACL
+
+Create "Test Instance" in the public subnet with Amazon Linux 2023 AMI
+Configure "Test SG" security group allowing ICMP traffic
+Test connectivity from private instance to test instance using ping
+Modify the custom network ACL to deny ICMP traffic to the test instance
+Verify that ping no longer works, confirming ACL is functioning
+
+
+
+Page 5
+
+Answer assessment questions about VPC architecture and security implementations:
+
+What is the purpose of the internet gateway in the public subnet?
+What allows the instance in the private subnet to connect to the internet?
+Can the instance in the private subnet be accessed directly from the internet?
+Why do you use two different key pairs to access the private instance and the bastion host?
+Can the bastion host use ping and get a reply from the instance in the private subnet?
+Which security group rules allow the private EC2 instance to receive return traffic when pinging the test instance?
+
+
+
+Page 6
+
+Submit the lab work
+Review the submission report for feedback
+
+Output
+
+A VPC with public and private subnets
+Internet gateway attached to the VPC for public subnet internet access
+NAT gateway in the public subnet providing internet access for private resources
+Bastion host in the public subnet acting as a secure entry point
+Private EC2 instance accessible only through the bastion host
+Secure SSH passthrough configuration enabling administrative access
+Custom network ACL demonstrating fine-grained traffic control
+Implementation of security layers including security groups and network ACLs
+Successful demonstration of architectural best practices:
+
+Giving people the ability to perform actions at a distance (through bastion host)
+Controlling traffic at all layers (through security groups and network ACLs)
+✅
+---
+Aim
+Create a scalable and highly available environment for the café's web application to handle a temporary spike in traffic when featured on a TV food show, ensuring the website remains responsive and can scale to meet fluctuating customer demand.
+Process
+Page 1
+
+Inspect the current lab environment
+
+Explore how the VPC network is set up
+Answer questions about the lab environment:
+
+Which ports are open in the CafeSG security group?
+Can you connect from the internet to instances in Public Subnet 1?
+Should an instance in Private Subnet 1 be able to reach the internet?
+Should an instance in Private Subnet 2 be able to reach the internet?
+Can you connect to the CafeWebAppServer instance from the internet?
+What is the name of the Amazon Machine Image (AMI)?
+
+
+
+
+
+Page 2
+
+Update the network to work across multiple Availability Zones
+
+Create a NAT gateway in the Public Subnet in the second Availability Zone
+Configure the network to route internet-bound traffic from Private Subnet 2 to the new NAT gateway
+
+
+Create a launch template
+
+Use the "Cafe WebServer Image" AMI created during lab setup
+Specify t2.micro instance type
+Create and select a new key pair
+Select the CafeSG security group
+Add a resource tag with Key=Name and Value=webserver
+Set CafeRole as the IAM instance profile
+
+
+
+Page 3
+
+Create an Auto Scaling group
+
+Use the launch template created in the previous step
+Select the lab VPC
+Choose Private Subnet 1 and Private Subnet 2
+Set group size parameters:
+
+Desired capacity: 2
+Minimum capacity: 2
+Maximum capacity: 6
+
+
+Configure automatic scaling with a target tracking scaling policy:
+
+Metric type: Average CPU utilization
+Target value: 25%
+Instance warmup: 60 seconds
+
+
+Verify Auto Scaling group creation by checking for two instances in the EC2 console
+
+
+
+Page 4
+
+Create a load balancer
+
+Create an HTTP Application Load Balancer
+Name the load balancer
+Select the lab VPC
+Place the load balancer in the two public subnets
+Create a new security group allowing HTTP traffic from anywhere
+Create a new target group
+Wait for the load balancer to become active
+Modify the Auto Scaling group to add the new load balancer target group
+
+
+
+Page 5
+
+Test load balancing and automatic scaling
+
+Test the web application without load
+
+Visit the DNS name of the load balancer with /cafe appended
+Verify the café application loads correctly
+
+
+Test automatic scaling under load
+
+Connect to a running web server instance using AWS Systems Manager Session Manager
+Run a stress test to increase CPU load:
+Copysudo amazon-linux-extras install epel
+sudo yum install stress -y
+stress --cpu 1 --timeout 600
+
+Observe that the Auto Scaling group deploys new instances in response to the increased load
+
+
+
+
+
+Page 6
+
+Submit the lab work
+Review the submission report for feedback
+
+Output
+
+A highly available architecture spanning two Availability Zones
+Scalable web application infrastructure with:
+
+EC2 instances in private subnets across multiple Availability Zones
+NAT gateways providing internet access for private instances
+Application Load Balancer distributing traffic across instances
+Auto Scaling group automatically adjusting capacity based on demand
+
+
+Configured automatic scaling that responds to CPU utilization metrics
+Functional web application accessible through the load balancer
+Demonstrated ability to handle increased traffic through automatic scaling
+Implementation of AWS architectural best practices for high availability and scalability
+✅
+---
+Lab: Automating Infrastructure Deployment with CloudFormation
+Aim
+Create a robust and maintainable infrastructure deployment process using AWS CloudFormation, implementing version control and continuous integration to enable rapid deployment of network and application resources across multiple AWS regions for the café's website, ensuring consistency and reliability while reducing manual configuration errors.
+Process
+Page 1
+
+Create a basic CloudFormation template for S3 bucket deployment
+
+Write a simple YAML template with AWSTemplateFormatVersion and Resources
+Define an S3 bucket resource using AWS::S3::Bucket type
+Deploy the stack using AWS CLI to test functionality
+
+
+Enhance the S3 bucket template for static website hosting
+
+Add DeletionPolicy to retain the bucket during stack deletion
+Configure WebsiteConfiguration with IndexDocument property
+Add output parameters to retrieve the website URL
+
+
+Upload website assets to the S3 bucket
+
+Set appropriate bucket permissions for public access
+Copy static website files with public-read ACL
+
+
+
+Page 2
+
+Clone and explore the CodeCommit repository
+
+Use Git commands to clone the CFTemplatesRepo repository
+Examine the structure of existing templates in the repository
+Analyze the start-lab.yaml template that defines AWS Cloud9 and CodeCommit resources
+
+
+Create a network layer template
+
+Duplicate template1.yaml and rename to cafe-network.yaml
+Observe the seven resource definitions for VPC networking
+Explore the pre-defined CodePipeline resources in the account
+
+
+Analyze the CafeNetworkPipeline structure
+
+Examine the Source stage that pulls from CodeCommit
+Review the Deploy stage that uses CloudFormation to create resources
+Understand how changes in CodeCommit trigger pipeline execution
+
+
+
+Page 3
+
+Enhance the network template with output parameters
+
+Add PublicSubnet output that exports subnet ID
+Add VpcId output that exports VPC ID
+Use intrinsic functions to create dynamic export names
+
+
+Use Git workflow to deploy the network template
+
+Add the file to Git tracking with git add
+Commit the changes with a descriptive message
+Push to the CodeCommit repository to trigger pipeline execution
+
+
+Observe pipeline execution
+
+Monitor the CafeNetworkPipeline stages and status
+Troubleshoot any deployment failures
+Verify the network resources created in the Amazon VPC console
+
+
+
+Page 4
+
+Create application template for the café website
+
+Duplicate template2.yaml and rename to cafe-app.yaml
+Analyze the existing parameter definitions and mappings
+Add a parameter for EC2 instance type selection
+
+
+Define EC2 instance resource
+
+Configure ImageId, InstanceType, and KeyName properties
+Add IamInstanceProfile for necessary permissions
+Configure NetworkInterfaces to place instance in correct subnet
+Import VPC and subnet values from the network stack
+Add Name tag for the server instance
+
+
+
+Page 5
+
+Complete the application template
+
+Add UserData script to install Apache, MariaDB, and PHP
+Configure script to download and run café application installer
+Add output parameters to retrieve public IP address
+
+
+Deploy the application stack
+
+Validate template syntax with CloudFormation validate-template
+Commit and push the application template to CodeCommit
+Monitor CafeAppPipeline execution and troubleshoot issues
+Verify EC2 instance creation and configuration
+Test the café website functionality
+
+
+
+Page 6
+
+Duplicate infrastructure to a second AWS region
+
+Create the network stack in us-west-2 region using AWS CLI
+Create region-specific resources like EC2 key pairs
+Upload application template to S3 for cross-region access
+Deploy application stack in second region via CloudFormation console
+Override instance type parameter during stack creation
+Test café website functionality in the second region
+
+
+Observe benefits of infrastructure as code
+
+Quick replication of environments across regions
+Consistent configuration through templating
+Version control for infrastructure changes
+Automation of deployment processes
+
+
+
+Output
+
+Fully functioning static and dynamic café websites deployed across two AWS regions
+Versioned CloudFormation templates stored in CodeCommit for infrastructure components:
+
+S3 bucket configured for static website hosting
+VPC networking layer with appropriate routing and security
+Application layer with properly configured EC2 instances
+
+
+Automated CI/CD pipelines that detect template changes and update infrastructure
+Demonstration of infrastructure as code benefits:
+
+Rapid environment replication across regions
+Consistent deployment with parameterized customization
+Version-controlled infrastructure definitions
+Reduced manual configuration and potential for human error
+
+
+Foundation for disaster recovery capabilities through rapid infrastructure redeployment
+Skills in using AWS developer services (CodeCommit, CodePipeline) integrated with CloudFormation
+✅
+---
+Implementing a Serverless Architecture for a Café Lab Summary
+Aim
+The purpose of this lab is to implement a serverless architecture using AWS Lambda, Amazon SNS, and Amazon EventBridge to generate daily sales reports for a café. The solution replaces a resource-intensive cron job running on a web server with a more efficient, cost-effective serverless approach that extracts data from an RDS database, generates reports, and delivers them via email.
+Process
+Page 1: Understanding the Scenario
+
+Café owners Frank and Martha need daily sales reports to plan inventory and monitor promotions
+Initial solution using a cron job on EC2 web server was causing performance issues
+Serverless architecture proposed as a more efficient and cost-effective alternative
+Solution components:
+
+AWS Lambda for report generation
+Amazon SNS for email delivery
+Amazon EventBridge for scheduling
+
+
+
+Page 2: Lab Setup and Initial Tasks
+
+Downloaded and examined two zip files containing Lambda function code:
+
+salesAnalysisReportDataExtractor.zip (includes package folder with dependencies)
+salesAnalysisReport.zip
+
+
+Created security group for Lambda function (LambdaSG)
+
+Configured outbound rules to allow all traffic
+
+
+Updated DatabaseSG security group to allow MySQL/Aurora connections from LambdaSG
+
+Added inbound rule with Type: MYSQL/Aurora and Source: LambdaSG
+
+
+
+Page 3: Creating the DataExtractor Lambda Function
+
+Deployed the salesAnalysisReportDataExtractor Lambda function with:
+
+Runtime: Python 3.11
+Role: salesAnalysisReportDERole
+VPC Configuration: Lab VPC with Private subnets 1 and 2
+Security Group: LambdaSG
+
+
+Configured function details:
+
+Uploaded salesAnalysisReportDataExtractor.zip code
+Set handler to salesAnalysisReportDataExtractor.lambda_handler
+Allocated 128 MB memory
+Set timeout to 30 seconds
+
+
+
+Page 4: Creating the Analysis and Reporting Lambda Function
+
+Deployed the salesAnalysisReport Lambda function with:
+
+Runtime: Python 3.11
+Role: salesAnalysisReportRole (without VPC configuration)
+Code: salesAnalysisReport.zip
+Handler: salesAnalysisReport.lambda_handler
+Memory: 128 MB
+Timeout: 30 seconds
+
+
+Created standard SNS topic (SalesReportTopic) with display name "Sales Report Topic"
+Added environment variable to the Lambda function:
+
+Variable Name: topicARN
+Variable Value: ARN of the created SNS topic
+
+
+
+Page 5: Setting Up the Email Subscription and Testing
+
+Created an email subscription to the SalesReportTopic
+Confirmed subscription via email link
+Created and executed a test event for the salesAnalysisReport Lambda function
+Troubleshooting steps if test fails:
+
+Check CloudWatch Logs for connection errors (security group misconfiguration)
+Verify timeout settings (30 seconds)
+Confirm correct handler configuration
+Review Lambda function setup and permissions
+
+
+
+Page 6: Automating the Report Generation
+
+Created an EventBridge rule to trigger the salesAnalysisReport Lambda function daily
+
+Specified a cron expression to set the time (in UTC)
+Used the existing mySchedulerRole
+
+
+Verified email delivery of the report
+Added email subscriptions for café owners Frank and Martha
+
+Output
+Delivered Components
+
+Two Lambda functions working together:
+
+salesAnalysisReportDataExtractor (connects to RDS within VPC)
+salesAnalysisReport (generates and distributes reports)
+
+
+SNS topic with email subscription for report delivery
+EventBridge rule for daily automated report generation
+
+Architecture
+
+Serverless reporting system that:
+
+Securely extracts data from RDS database in a VPC
+Generates formatted sales reports
+Delivers reports via email using SNS
+Runs automatically on a daily schedule
+
+
+
+Knowledge Demonstrated
+
+AWS Lambda function creation and configuration
+VPC and security group configuration for database access
+Environment variable usage in Lambda functions
+SNS topic creation and subscription management
+EventBridge rule creation using cron expressions
+CloudWatch Logs for troubleshooting Lambda functions
+
+Business Benefits
+
+Improved web application performance by offloading resource-intensive reporting
+Cost reduction by replacing 24/7 EC2 instance with on-demand Lambda functions
+Automated delivery of critical business information to decision makers
+Enhanced ability to plan inventory and monitor promotional effectiveness
+Foundation for future serverless and automated reporting features
+✅
+---
+Exploring AWS Identity and Access Management (IAM) Lab Summary
+Aim
+This lab provides hands-on experience with AWS Identity and Access Management (IAM), focusing on managing users, groups, and policies. The objective is to implement a real-world business scenario by configuring appropriate permissions for different user roles, understanding policy structures, and testing the effects of these permissions on AWS service access.
+Process
+Page 1: Introduction and Lab Setup
+
+Accessed the AWS Management Console via the lab environment
+Noted the current AWS Region for reference throughout the lab
+Navigated to the IAM service from the Security, Identity, & Compliance section
+
+Page 2: Exploring Pre-created Users and Groups
+
+Examined three pre-created IAM users:
+
+user-1, user-2, and user-3
+Verified that initially these users had no permissions assigned
+Noted that all users had console passwords configured
+
+
+Explored three pre-created IAM groups:
+
+EC2-Admin
+EC2-Support
+S3-Support
+
+
+Examined the EC2-Support group:
+
+Identified the AmazonEC2ReadOnlyAccess managed policy
+Reviewed the JSON policy document structure
+Understood the policy granted List and Describe (read-only) permissions
+
+
+
+Page 3: Inspecting Group Policies
+
+Reviewed the S3-Support group:
+
+Identified the AmazonS3ReadOnlyAccess managed policy attached
+Examined the JSON policy document
+Noted permissions for Get and List operations on S3 resources
+
+
+Examined the EC2-Admin group:
+
+Discovered an inline policy (EC2-Admin-Policy) rather than a managed policy
+Reviewed the JSON policy structure
+Noted permissions to Describe EC2 instances and Start/Stop instances
+
+
+Reviewed the business scenario requirements:
+
+user-1: S3 read-only access (S3-Support group)
+user-2: EC2 read-only access (EC2-Support group)
+user-3: EC2 admin access with start/stop capabilities (EC2-Admin group)
+
+
+
+Page 4: Adding Users to Groups
+
+Added user-1 to the S3-Support group:
+
+Navigated to the S3-Support group's Users tab
+Selected Add users and added user-1
+Verified user-1 now appeared in the group membership
+
+
+Added user-2 to the EC2-Support group:
+
+Used similar steps to add user-2 to EC2-Support
+Confirmed user-2's group membership
+
+
+Added user-3 to the EC2-Admin group:
+
+Added user-3 following the same process
+Verified user-3's membership in EC2-Admin
+
+
+Confirmed all groups showed "1" in the Users column
+
+Page 5: Testing IAM User Sign-in and Permissions
+
+Located the IAM users sign-in URL from the IAM Dashboard
+
+URL format: https://123456789012.signin.aws.amazon.com/console
+Copied the sign-in link for testing
+
+
+Tested user-1 permissions:
+
+Opened a private/incognito browser window
+Signed in with user-1 credentials (password: Lab-Password1)
+Successfully accessed and browsed S3 buckets
+Attempted to access EC2 and received "not authorized" error message
+Signed out user-1
+
+
+
+Page 6: Continuing Permission Tests
+
+Tested user-2 permissions:
+
+Signed in as user-2 (password: Lab-Password2)
+Successfully viewed EC2 instances (read-only access)
+Attempted to stop an EC2 instance and received authorization error
+Attempted to access S3 and received "don't have permissions" error
+Signed out user-2
+
+
+Tested user-3 permissions:
+
+Signed in as user-3 (password: Lab-Password3)
+Successfully viewed EC2 instances
+Successfully stopped an EC2 instance
+Verified the instance state changed to "Stopping"
+
+
+Closed the private browser window
+
+Output
+Delivered Components
+
+Three IAM users configured with appropriate group memberships:
+
+user-1 added to S3-Support group
+user-2 added to EC2-Support group
+user-3 added to EC2-Admin group
+
+
+Functioning permission structure implementing the business requirements
+
+Architecture
+
+Implemented IAM security architecture with:
+
+Role-based access control using IAM groups
+Least-privilege permissions aligned with job functions
+Separation of duties between administrative and support roles
+Both managed and inline policies for different use cases
+
+
+
+Knowledge Demonstrated
+
+Understanding of IAM users, groups, and policy concepts
+Ability to analyze policy documents (JSON format)
+Comprehension of policy elements: Effect, Action, and Resource
+Distinguishing between managed and inline policies
+Configuring group memberships to assign permissions
+Testing and verifying access controls in the AWS Management Console
+Troubleshooting permission issues
+
+Business Benefits
+
+Enhanced security through proper implementation of least-privilege access
+Simplified permission management using groups instead of individual user policies
+Standardized access for job functions through reusable group configurations
+Clear separation between read-only support roles and administrative capabilities
+Foundation for scalable IAM architecture that can accommodate organizational growth
+Reduced risk of unauthorized actions through appropriate permission boundaries
+✅
+---
+
+Exploring AWS Identity and Access Management (IAM) Lab Summary
+Aim
+This lab provides hands-on experience with AWS Identity and Access Management (IAM), focusing on managing users, groups, and policies. The objective is to implement a real-world business scenario by configuring appropriate permissions for different user roles, understanding policy structures, and testing the effects of these permissions on AWS service access.
+Process
+Page 1: Introduction and Lab Setup
+
+Accessed the AWS Management Console via the lab environment
+Noted the current AWS Region for reference throughout the lab
+Navigated to the IAM service from the Security, Identity, & Compliance section
+
+Page 2: Exploring Pre-created Users and Groups
+
+Examined three pre-created IAM users:
+
+user-1, user-2, and user-3
+Verified that initially these users had no permissions assigned
+Noted that all users had console passwords configured
+
+
+Explored three pre-created IAM groups:
+
+EC2-Admin
+EC2-Support
+S3-Support
+
+
+Examined the EC2-Support group:
+
+Identified the AmazonEC2ReadOnlyAccess managed policy
+Reviewed the JSON policy document structure
+Understood the policy granted List and Describe (read-only) permissions
+
+
+
+Page 3: Inspecting Group Policies
+
+Reviewed the S3-Support group:
+
+Identified the AmazonS3ReadOnlyAccess managed policy attached
+Examined the JSON policy document
+Noted permissions for Get and List operations on S3 resources
+
+
+Examined the EC2-Admin group:
+
+Discovered an inline policy (EC2-Admin-Policy) rather than a managed policy
+Reviewed the JSON policy structure
+Noted permissions to Describe EC2 instances and Start/Stop instances
+
+
+Reviewed the business scenario requirements:
+
+user-1: S3 read-only access (S3-Support group)
+user-2: EC2 read-only access (EC2-Support group)
+user-3: EC2 admin access with start/stop capabilities (EC2-Admin group)
+
+
+
+Page 4: Adding Users to Groups
+
+Added user-1 to the S3-Support group:
+
+Navigated to the S3-Support group's Users tab
+Selected Add users and added user-1
+Verified user-1 now appeared in the group membership
+
+
+Added user-2 to the EC2-Support group:
+
+Used similar steps to add user-2 to EC2-Support
+Confirmed user-2's group membership
+
+
+Added user-3 to the EC2-Admin group:
+
+Added user-3 following the same process
+Verified user-3's membership in EC2-Admin
+
+
+Confirmed all groups showed "1" in the Users column
+
+Page 5: Testing IAM User Sign-in and Permissions
+
+Located the IAM users sign-in URL from the IAM Dashboard
+
+URL format: https://123456789012.signin.aws.amazon.com/console
+Copied the sign-in link for testing
+
+
+Tested user-1 permissions:
+
+Opened a private/incognito browser window
+Signed in with user-1 credentials (password: Lab-Password1)
+Successfully accessed and browsed S3 buckets
+Attempted to access EC2 and received "not authorized" error message
+Signed out user-1
+
+
+
+Page 6: Continuing Permission Tests
+
+Tested user-2 permissions:
+
+Signed in as user-2 (password: Lab-Password2)
+Successfully viewed EC2 instances (read-only access)
+Attempted to stop an EC2 instance and received authorization error
+Attempted to access S3 and received "don't have permissions" error
+Signed out user-2
+
+
+Tested user-3 permissions:
+
+Signed in as user-3 (password: Lab-Password3)
+Successfully viewed EC2 instances
+Successfully stopped an EC2 instance
+Verified the instance state changed to "Stopping"
+
+
+Closed the private browser window
+
+Output
+Delivered Components
+
+Three IAM users configured with appropriate group memberships:
+
+user-1 added to S3-Support group
+user-2 added to EC2-Support group
+user-3 added to EC2-Admin group
+
+
+Functioning permission structure implementing the business requirements
+
+Architecture
+
+Implemented IAM security architecture with:
+
+Role-based access control using IAM groups
+Least-privilege permissions aligned with job functions
+Separation of duties between administrative and support roles
+Both managed and inline policies for different use cases
+
+
+
+Knowledge Demonstrated
+
+Understanding of IAM users, groups, and policy concepts
+Ability to analyze policy documents (JSON format)
+Comprehension of policy elements: Effect, Action, and Resource
+Distinguishing between managed and inline policies
+Configuring group memberships to assign permissions
+Testing and verifying access controls in the AWS Management Console
+Troubleshooting permission issues
+
+Business Benefits
+
+Enhanced security through proper implementation of least-privilege access
+Simplified permission management using groups instead of individual user policies
+Standardized access for job functions through reusable group configurations
+Clear separation between read-only support roles and administrative capabilities
+Foundation for scalable IAM architecture that can accommodate organizational growth
+Reduced risk of unauthorized actions through appropriate permission boundaries
+✅
+---
