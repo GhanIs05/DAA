@@ -1,65 +1,45 @@
 #include <stdio.h>
-#include <stdbool.h>
+#include <stdlib.h>
 
-#define MAX 100
+int graph[100][100];
+int color[100];
 
-int graph[MAX][MAX];
-int colors[MAX];
-int n;
-
-bool isSafe(int v, int c) {
-    for (int i = 0; i < n; i++) {
-        if (graph[v][i] && colors[i] == c) {
-            return false;
+int isSafe(int node, int c, int n) {
+    for (int i = 1; i <= n; i++) {
+        if (graph[node][i] && color[i] == c) {
+            return 0;
         }
     }
-    return true;
+    return 1;
 }
 
-bool graphColoringUtil(int m, int v) {
-    if (v == n) {
-        return true;
-    }
-
-    for (int c = 1; c <= m; c++) {
-        if (isSafe(v, c)) {
-            colors[v] = c;
-
-            if (graphColoringUtil(m, v + 1)) {
-                return true;
-            }
-
-            colors[v] = 0;
+void graphColoring(int node, int n, int m) {
+    if (node > n) {
+        for (int i = 1; i <= n; i++) {
+            printf("%d ", color[i]);
         }
-    }
-    return false;
-}
-
-void graphColoring(int m) {
-    for (int i = 0; i < n; i++) {
-        colors[i] = 0;
-    }
-
-    if (!graphColoringUtil(m, 0)) {
-        printf("Solution does not exist\n");
+        printf("\n");
         return;
     }
 
-    printf("Solution Exists: Assigned colors are:\n");
-    for (int i = 0; i < n; i++) {
-        printf("Vertex %d -> Color %d\n", i, colors[i]);
+    for (int c = 1; c <= m; c++) {
+        if (isSafe(node, c, n)) {
+            color[node] = c;
+            graphColoring(node + 1, n, m);
+            color[node] = 0; // backtrack
+        }
     }
 }
 
 int main() {
-    int m;
+    int n, m;
 
     printf("Enter the number of vertices: ");
     scanf("%d", &n);
 
-    printf("Enter the adjacency matrix (%dx%d):\n", n, n);
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
+    printf("Enter the adjacency matrix:\n");
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= n; j++) {
             scanf("%d", &graph[i][j]);
         }
     }
@@ -67,7 +47,8 @@ int main() {
     printf("Enter the number of colors: ");
     scanf("%d", &m);
 
-    graphColoring(m);
+    printf("Coloring solutions are:\n");
+    graphColoring(1, n, m);
 
     return 0;
 }
