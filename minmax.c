@@ -5,7 +5,7 @@ void findMaxMin(int arr[], int low, int high, int *min, int *max) {
 		*min = *max = arr[low];
 		return;
 	}
-	if(high == low + 1) {
+	if(high -1 == low) {
 		if(arr[low] < arr[high]) {
 			*min = arr[low];
 			*max = arr[high];
